@@ -61,7 +61,7 @@ EXAMPLES = '''
         nsip: 172.18.0.2
         nitro_user: nsroot
         nitro_pass: nsroot
-        ssl_cert_validation: no
+        validate_certs: no
 
         module: netscaler_server
         operation: present
@@ -106,12 +106,19 @@ def main():
         name=dict(type='str'),
         ipaddress=dict(type='str'),
     )
+    hand_inserted_arguments = dict(
+        save_config=dict(
+            type='bool',
+            default=False
+        )
+    )
 
     argument_spec = dict()
 
     argument_spec.update(netscaler_common_arguments)
 
     argument_spec.update(module_specific_arguments)
+    argument_spec.update(hand_inserted_arguments)
 
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -173,12 +180,14 @@ def main():
                 if not module.check_mode:
                     server_proxy.add()
                     server_proxy.update()
-                    client.save_config()
+                    if module.params['save_config']:
+                        client.save_config()
                 module_result['changed'] = True
             elif not server_identical():
                 if not module.check_mode:
                     server_proxy.update()
-                    client.save_config()
+                    if module.params['save_config']:
+                        client.save_config()
                 module_result['changed'] = True
             else:
                 module_result['changed'] = False
@@ -200,7 +209,8 @@ def main():
             if server_exists():
                 if not module.check_mode:
                     server_proxy.delete()
-                    client.save_config()
+                    if module.params['save_config']:
+                        client.save_config()
                 module_result['changed'] = True
             else:
                 module_result['changed'] = False
